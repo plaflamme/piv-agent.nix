@@ -30,8 +30,16 @@
           ...
         }:
         {
-          packages.piv-agent = pkgs.callPackage ./packages/piv-agent.nix { };
-          packages.default = self'.packages.piv-agent;
+          packages = {
+            piv-agent = pkgs.callPackage ./packages/piv-agent.nix { };
+            default = self'.packages.piv-agent;
+          };
+
+          checks = import ./tests {
+            inherit pkgs;
+            home-manager = inputs.home-manager;
+            piv-agent = self.homeModules.piv-agent;
+          };
         };
       flake = {
         overlays.default = final: prev: {
@@ -42,7 +50,7 @@
             imports = [ ./home/default.nix ];
             services.piv-agent.package =
               lib.mkDefault
-                self.packages.${pkgs.stdenv.hostPlatform.system}.my-custom-package;
+                self.packages.${pkgs.stdenv.hostPlatform.system}.piv-agent;
           };
           default = self.packages.piv-agent;
         };
