@@ -11,7 +11,7 @@
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
+    inputs@{ self, flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         inputs.home-manager.flakeModules.home-manager
@@ -37,9 +37,14 @@
         overlays.default = final: prev: {
           piv-agent = final.callPackage ./packages/piv-agent.nix { };
         };
-        homeModules = rec {
-          piv-agent = import ./home/default.nix;
-          default = piv-agent;
+        homeModules = {
+          piv-agent = { lib, pkgs, ... }: {
+            imports = [ ./home/default.nix ];
+            services.piv-agent.package =
+              lib.mkDefault
+                self.packages.${pkgs.stdenv.hostPlatform.system}.my-custom-package;
+          };
+          default = self.packages.piv-agent;
         };
       };
     };
