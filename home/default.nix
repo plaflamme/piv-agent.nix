@@ -6,8 +6,7 @@
 let
   cfg = config.services.piv-agent;
 
-  # systemd specifier syntax; %t is the user runtime directory ($XDG_RUNTIME_DIR)
-  socketPath = "%t/piv-agent/ssh.socket";
+  socketPath = "piv-agent/ssh.socket";
 
   # Required by `piv-agent serve` but only read for age seeds, which we
   # don't support yet, so a non-existent runtime path is fine.
@@ -26,25 +25,39 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [ cfg.package ];
 
+    sshAuthSock = {
+      enable = true;
+      initialization = {
+        bash = ''
+          unset SSH_AGENT_PID
+          if [ "''${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
+            export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/${socketPath}"
+          fi
+        '';
+      };
+      systemd.socketProviderUnit = "piv-agent.service";
+    };
+
     systemd.user = {
       sockets."piv-agent" = {
         Unit.Description = "piv-agent socket activation";
-        Socket.ListenStream = [ socketPath ];
+        # systemd specifier syntax; %t is the user runtime directory ($XDG_RUNTIME_DIR)
+        Socket.ListenStream = [ "%t/${socketPath}" ];
         Install.WantedBy = [ "sockets.target" ];
       };
 
       services."piv-agent" = {
-        Unit.Description = "piv-agent service";
+        Unit = {
+          Description = "piv-agent service";
+          Requires = "piv-agent.socket";
+          After = "piv-agent.socket";
+          RefuseManualStart = true;
+        };
         Service = {
           ExecStart = "${cfg.package}/bin/piv-agent serve --agent-types=ssh=0";
           Environment = [ "CREDENTIALS_DIRECTORY=${credentialsDir}" ];
         };
       };
-    };
-
-    # Point the SSH client at the piv-agent socket.
-    home.sessionVariables = {
-      SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/piv-agent/ssh.socket";
     };
   };
 }

@@ -8,6 +8,7 @@ let
   hmTesting = {
     runTest =
       {
+        name,
         configuration,
         tests,
       }:
