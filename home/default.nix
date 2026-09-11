@@ -5,12 +5,6 @@
 }:
 let
   cfg = config.services.piv-agent;
-
-  socketPath = "piv-agent/ssh.socket";
-
-  # Required by `piv-agent serve` but only read for age seeds, which we
-  # don't support yet, so a non-existent runtime path is fine.
-  credentialsDir = "%t/piv-agent/credentials";
 in
 {
   options.services.piv-agent = {
@@ -20,6 +14,16 @@ in
       type = lib.types.package;
       description = "The piv-agent package to use.";
     };
+
+    socket = lib.mkOption {
+      type = lib.types.str;
+      default = "piv-agent/ssh.socket";
+      example = "piv-agent/my.socket";
+      description = ''
+        The SSH agent's socket; interpreted as a suffix to {env}`$XDG_RUNTIME_DIR`
+        on Linux.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -27,14 +31,15 @@ in
 
     sshAuthSock = {
       enable = true;
-      initialization = {
-        bash = ''
-          unset SSH_AGENT_PID
-          if [ "''${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
-            export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/${socketPath}"
-          fi
-        '';
-      };
+      initialization =
+        let
+          socketPath = "$${XDG_RUNTIME_DIR}/${cfg.socket}";
+        in
+        {
+          bash = ''export SSH_AUTH_SOCK="${socketPath}"'';
+          fish = ''set -x SSH_AUTH_SOCK "${socketPath}"'';
+          nushell = "$env.SSH_AUTH_SOCK = $env.XDG_RUNTIME_DIR/${cfg.socket}";
+        };
       systemd.socketProviderUnit = "piv-agent.service";
     };
 
@@ -42,7 +47,7 @@ in
       sockets."piv-agent" = {
         Unit.Description = "piv-agent socket activation";
         # systemd specifier syntax; %t is the user runtime directory ($XDG_RUNTIME_DIR)
-        Socket.ListenStream = [ "%t/${socketPath}" ];
+        Socket.ListenStream = [ "%t/${cfg.socket}" ];
         Install.WantedBy = [ "sockets.target" ];
       };
 
@@ -54,8 +59,9 @@ in
           RefuseManualStart = true;
         };
         Service = {
-          ExecStart = "${cfg.package}/bin/piv-agent serve --agent-types=ssh=0";
-          Environment = [ "CREDENTIALS_DIRECTORY=${credentialsDir}" ];
+          # NOTE: credentials-directory is required by `piv-agent serve` but only read for age seeds, which we
+          # don't support yet, so a non-existent runtime path is fine.
+          ExecStart = "${cfg.package}/bin/piv-agent serve --credentials-directory=/dev/null --agent-types=ssh=0";
         };
       };
     };
