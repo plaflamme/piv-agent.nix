@@ -47,7 +47,7 @@ let
             }
 
             assertFileContains() {
-              if ! grep -q "$2" "$1"; then
+              if ! grep -q -- "$2" "$1"; then
                 echo "FAIL: File '$1' does not contain content pattern: '$2'" >&2
                 echo "File contents were:" >&2
                 cat "$1" >&2
@@ -82,5 +82,6 @@ hmTesting.runTest {
 
   tests = {
     simple = import ./simple.nix;
+    pinentry = import ./pinentry.nix;
   };
 }

@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -24,9 +25,38 @@ in
         on Linux.
       '';
     };
+
+    pinentry = {
+      package = lib.mkPackageOption pkgs "pinentry-gnome3" {
+        nullable = true;
+        default = null;
+        extraDescription = ''
+          Which pinentry interface to use. If not `null`, it sets
+          {option}`--pinentry-binary-name` command line option. Beware that
+          `pinentry-gnome3` may not work on non-GNOME systems. You can fix it by
+          adding the following to your configuration:
+          ```nix
+          home.packages = [ pkgs.gcr ];
+          ```
+        '';
+      };
+
+      program = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        example = "pinentry-wayprompt";
+        description = ''
+          Which program to search for in the configured `pinentry.package`.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    # Grab the default binary name and fallback to expected value if `meta.mainProgram` not set
+    services.piv-agent.pinentry.program = lib.mkOptionDefault (
+      cfg.pinentry.package.meta.mainProgram or "pinentry"
+    );
+
     home.packages = [ cfg.package ];
 
     sshAuthSock = {
@@ -59,9 +89,18 @@ in
           RefuseManualStart = true;
         };
         Service = {
-          # NOTE: credentials-directory is required by `piv-agent serve` but only read for age seeds, which we
-          # don't support yet, so a non-existent runtime path is fine.
-          ExecStart = "${cfg.package}/bin/piv-agent serve --credentials-directory=/dev/null --agent-types=ssh=0";
+          ExecStart = lib.concatStringsSep " " (
+            [
+              "${cfg.package}/bin/piv-agent serve"
+              # NOTE: credentials-directory is required by `piv-agent serve` but only read for age seeds, which we
+              # don't support yet, so a non-existent runtime path is fine.
+              "--credentials-directory=/dev/null"
+              "--agent-types=ssh=0"
+            ]
+            ++ lib.optional (
+              cfg.pinentry.package != null
+            ) "--pinentry-binary-name=${lib.getExe' cfg.pinentry.package cfg.pinentry.program}"
+          );
         };
       };
     };
