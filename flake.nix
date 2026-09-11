@@ -1,5 +1,5 @@
 {
-  description = "piv-agent package and overlay";
+  description = "piv-agent home-manager module";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
