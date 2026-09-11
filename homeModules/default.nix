@@ -90,7 +90,7 @@ in
       enable = true;
       initialization =
         let
-          socketPath = "$${XDG_RUNTIME_DIR}/${cfg.socket}";
+          socketPath = "\${XDG_RUNTIME_DIR}/${cfg.socket}";
         in
         {
           bash = ''export SSH_AUTH_SOCK="${socketPath}"'';
