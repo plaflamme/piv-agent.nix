@@ -34,3 +34,7 @@ Largely based on [ssh-agent](https://github.com/nix-community/home-manager/blob/
 ```
 
 Once the configuration activated, `$SSH_AUTH_SOCK` should point at the `systemd` socket created to start `piv-agent` on demand.
+
+## Status
+
+Currently only supports the `ssh-agent`.
