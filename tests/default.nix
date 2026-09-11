@@ -8,7 +8,6 @@ let
   hmTesting = {
     runTest =
       {
-        name,
         configuration,
         tests,
       }:
@@ -62,8 +61,9 @@ let
             # Run user's test.script block
             ${testScript}
 
-            # If we get here, the checks passed. Output a dummy file to satisfy Nix build constraints.
-            touch $out
+            # If we get here, the checks passed. Output the files so it's possible to inspect them.
+            mkdir $out
+            cp -r ./home-files $out
           ''
       ) tests;
   };
