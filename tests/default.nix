@@ -8,7 +8,6 @@ let
   hmTesting = {
     runTest =
       {
-        name,
         configuration,
         tests,
       }:
@@ -70,8 +69,6 @@ let
   };
 in
 hmTesting.runTest {
-  name = "piv-agent-module-tests";
-
   configuration = {
     imports = [ piv-agent ];
 
