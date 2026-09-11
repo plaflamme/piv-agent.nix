@@ -44,7 +44,7 @@
         };
         homeModules = {
           piv-agent = { lib, pkgs, ... }: {
-            imports = [ ./home/default.nix ];
+            imports = [ ./homeModules/default.nix ];
             services.piv-agent.package =
               lib.mkDefault
                 self.packages.${pkgs.stdenv.hostPlatform.system}.piv-agent;
