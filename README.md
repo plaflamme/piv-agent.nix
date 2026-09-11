@@ -22,14 +22,15 @@ Largely based on [ssh-agent](https://github.com/nix-community/home-manager/blob/
         piv-agent.homeModules.default
       ];
 
-      # enable and configure the agent
+      # enable and optionally configure the agent
       services.piv-agent = {
         enable = true;
         pinentry.package = pkgs.pinentry-egui;
+        exit-timeout = "42h";
       };
     };
   };
 }
 ```
 
-Once the configuration activated, `$SSH_AUTH_SOCK` should point at the `systemd` socket created to start `piv-agent` on demand. 
+Once the configuration activated, `$SSH_AUTH_SOCK` should point at the `systemd` socket created to start `piv-agent` on demand.

@@ -26,6 +26,33 @@ in
       '';
     };
 
+    load-keyfile = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      example = true;
+      description = ''
+        When `true`, load the key file from ~/.ssh/id_ed25519
+      '';
+    };
+
+    exit-timeout = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "12h";
+      description = ''
+        Exit after this period to drop transaction and key file passphrase cache, even if service is in use
+      '';
+    };
+
+    idle-timeout = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "128m";
+      description = ''
+        Exit after this period of disuse
+      '';
+    };
+
     pinentry = {
       package = lib.mkPackageOption pkgs "pinentry-gnome3" {
         nullable = true;
@@ -97,6 +124,9 @@ in
               "--credentials-directory=/dev/null"
               "--agent-types=ssh=0"
             ]
+            ++ lib.optional (cfg.load-keyfile) "--load-keyfile"
+            ++ lib.optional (cfg.exit-timeout != null) "--exit-timeout=${cfg.exit-timeout}"
+            ++ lib.optional (cfg.idle-timeout != null) "--idle-timeout=${cfg.idle-timeout}"
             ++ lib.optional (
               cfg.pinentry.package != null
             ) "--pinentry-binary-name=${lib.getExe' cfg.pinentry.package cfg.pinentry.program}"

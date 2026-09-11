@@ -82,6 +82,6 @@ hmTesting.runTest {
 
   tests = {
     simple = import ./simple.nix;
-    pinentry = import ./pinentry.nix;
+    configured = import ./configured.nix;
   };
 }
