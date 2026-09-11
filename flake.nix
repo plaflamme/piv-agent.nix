@@ -37,6 +37,8 @@
             home-manager = inputs.home-manager;
             piv-agent = self.homeModules.piv-agent;
           };
+
+          formatter = pkgs.nixfmt-tree;
         };
       flake = {
         overlays.default = final: prev: {
